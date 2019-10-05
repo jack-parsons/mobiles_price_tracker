@@ -11,7 +11,7 @@ import sys
 
 
 def to_title(str):
-    str = str.replace("-", " ").capitalize().replace("Iphone", "iPhone").replace("gb", "GB")
+    str = str.replace("-", " ").capitalize().replace("iphone", "iPhone").replace("gb", "GB")
     return str
 
 
