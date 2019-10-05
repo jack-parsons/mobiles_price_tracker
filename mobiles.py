@@ -31,7 +31,8 @@ def send_email(p, best_price, better, prev_offers, password, model, url):
     text = u"Best price for at least 5GB: £{0} for {1}GB\n\nPrice\t\tData\n{2}"\
         .format(best_price[0], best_price[1], "\n".join("£%.2f\t%.1fGB"%(price, data) for price, data in p))
     html = "<html><head><style>th {{text-align: left;}}</style></head>"\
-            "<body>Best price: £{} for {}GB <table style='width:100%'><th>Price</th><th>Data</th>{}</table>{}</body></html>"\
+            "<body>Best price: £{} for {}GB <table style='width:100%'><th>Price</th><th>Data</th>{}</table>"\
+                "<a href='{}'>Mobiles.co.uk</a></body></html>"\
         .format(best_price[0], best_price[1],
          "\n".join("<tr%s><td>£%.2f</td><td>%.1fGB</td><tr>"%(" style='background-color:red'" if (price, data) not in prev_offers else "", price, data) for price, data in p),
          url)
@@ -80,7 +81,7 @@ def main():
         offers = list(zip(prices, data))
         print(*offers)
 
-        if html_raw != old_raw:
+        if html_raw != old_raw and not all(offers[i] in prev_offers for i in range(len(offers))):
             better = False
             for offer in offers:
                 if offer[0] < best_offer[0]:
@@ -93,7 +94,7 @@ def main():
         old_raw = html_raw
         prev_offers = prev_offers.union(set(offers))
         print("Website checked...")
-        sleep(randint(5, 10))
+        sleep(randint(30, 60))
 
 
 if __name__ == "__main__":
