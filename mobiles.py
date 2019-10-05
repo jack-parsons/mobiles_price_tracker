@@ -12,6 +12,7 @@ import sys
 
 def to_title(str):
     str = str.replace("-", " ").capitalize().replace("Iphone", "iPhone").replace("gb", "GB")
+    return str
 
 
 def send_email(p, best_price, better, prev_offers, password, model):
