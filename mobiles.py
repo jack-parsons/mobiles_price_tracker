@@ -92,7 +92,7 @@ def main():
             print("Prices updated")
             
         old_raw = html_raw
-        prev_offers = prev_offers.union(set(offers))
+        prev_offers = set(offers)
         print("Website checked...")
         sleep(randint(30, 60))
 
