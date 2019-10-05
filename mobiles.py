@@ -15,7 +15,7 @@ def to_title(str):
     return str
 
 
-def send_email(p, best_price, better, prev_offers, password, model):
+def send_email(p, best_price, better, prev_offers, password, model, url):
     sender_email = "mobilespricetracker823@gmail.com"
     receiver_email = "jack.parsons.uk@gmail.com"
 
@@ -31,9 +31,10 @@ def send_email(p, best_price, better, prev_offers, password, model):
     text = u"Best price for at least 5GB: £{0} for {1}GB\n\nPrice\t\tData\n{2}"\
         .format(best_price[0], best_price[1], "\n".join("£%.2f\t%.1fGB"%(price, data) for price, data in p))
     html = "<html><head><style>th {{text-align: left;}}</style></head>"\
-            "<body>Best price: £{0} for {1}GB <table style='width:100%'><th>Price</th><th>Data</th>{2}</table></body></html>"\
+            "<body>Best price: £{} for {}GB <table style='width:100%'><th>Price</th><th>Data</th>{}</table>{}</body></html>"\
         .format(best_price[0], best_price[1],
-         "\n".join("<tr%s><td>£%.2f</td><td>%.1fGB</td><tr>"%(" style='background-color:red'" if (price, data) not in prev_offers else "", price, data) for price, data in p))
+         "\n".join("<tr%s><td>£%.2f</td><td>%.1fGB</td><tr>"%(" style='background-color:red'" if (price, data) not in prev_offers else "", price, data) for price, data in p),
+         url)
 
     # Turn these into plain/html MIMEText objects
     part1 = MIMEText(text, "plain")
@@ -61,9 +62,10 @@ def main():
     prices = []
     prev_offers = set()
     best_offer = (math.inf, 0)
+    url = "https://www.mobiles.co.uk/{}?sort=total_cost_after_cashback_asc&filter_tariff_data%5B%5D=>%3D3000%2C-1".format(model)
 
     while True:
-        fp = urllib.request.urlopen("https://www.mobiles.co.uk/{}?sort=total_cost_after_cashback_asc&filter_tariff_data%5B%5D=>%3D3000%2C-1".format(model))
+        fp = urllib.request.urlopen(url)
         mybytes = fp.read()
 
         html_raw = mybytes.decode("utf8")
@@ -84,12 +86,12 @@ def main():
                 if offer[0] < best_offer[0]:
                     better = True
                     best_offer = offer
-            send_email(offers, best_offer, better, prev_offers, password, model)
+            send_email(offers, best_offer, better, prev_offers, password, model, url)
 
             print("Prices updated")
             
         old_raw = html_raw
-        prev_offers.union(set(offers))
+        prev_offers = prev_offers.union(set(offers))
         print("Website checked...")
         sleep(randint(5, 10))
 
