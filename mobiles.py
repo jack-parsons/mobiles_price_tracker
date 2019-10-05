@@ -1,23 +1,28 @@
 import urllib.request
 from time import sleep
-# from win10toast import ToastNotifier
 from random import randint
 import re
 import math
 import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import csv
+import sys
 
-def send_email(p, best_price, better):
+
+def to_title(str):
+    str = str.replace("-", " ").capitalize().replace("Iphone", "iPhone").replace("gb", "GB")
+
+
+def send_email(p, best_price, better, prev_offers, password, model):
     sender_email = "mobilespricetracker823@gmail.com"
     receiver_email = "jack.parsons.uk@gmail.com"
-    password = input("Type your password and press enter:")
 
     message = MIMEMultipart("alternative")
     if not better:
-        message["Subject"] = "Price Update for iPhone XR at Mobiles.co.uk"
+        message["Subject"] = "Price Update for {} at Mobiles.co.uk".format(to_title(model))
     else:
-        message["Subject"] = "PRICE DROP for iPhone XR at Mobiles.co.uk"
+        message["Subject"] = "PRICE DROP for {} at Mobiles.co.uk".format(to_title(model))
     message["From"] = sender_email
     message["To"] = receiver_email
 
@@ -46,41 +51,47 @@ def send_email(p, best_price, better):
             sender_email, receiver_email, message.as_string()
         )
 
-# toaster = ToastNotifier()
-old_raw = ""
-prices = []
-prev_offers = set()
-best_offer = (math.inf, 0)
 
-while True:
-    fp = urllib.request.urlopen("https://www.mobiles.co.uk/apple-iphone-xr-64gb-black?sort=total_cost_after_cashback_asc&filter_tariff_data%5B%5D=>%3D3000%2C-1")
-    mybytes = fp.read()
+def main():
+    password = sys.argv[1]
+    model = sys.argv[2]
 
-    html_raw = mybytes.decode("utf8")
-    fp.close()
-
+    old_raw = ""
     prices = []
-    for price_str in re.findall('£.*total cost', html_raw):
-        prices.append(float(price_str.replace(" total cost", "").replace("£", "")))
-    data = []
-    for data_str in re.findall('<strong>\d*GB</strong>', html_raw):
-        data.append(float(re.findall("\d+", data_str)[0]))
-    offers = list(zip(prices, data))
-    print(*offers)
+    prev_offers = set()
+    best_offer = (math.inf, 0)
 
-    if html_raw != old_raw:
-        # toaster.show_toast("Mobiles website update", str(list(zip(prices, data))), threaded=True,
-        #                 icon_path=None, duration=60)  # 3 seconds
-        better = False
-        for offer in offers:
-            if offer[0] < best_offer[0]:
-                better = True
-                best_offer = offer
-        send_email(offers, best_offer, better)
+    while True:
+        fp = urllib.request.urlopen("https://www.mobiles.co.uk/{}?sort=total_cost_after_cashback_asc&filter_tariff_data%5B%5D=>%3D3000%2C-1".format(model))
+        mybytes = fp.read()
 
-        print("Prices updated")
-        
-    old_raw = html_raw
-    prev_offers.union(set(offers))
-    print("Website checked...")
-    sleep(randint(5, 10))
+        html_raw = mybytes.decode("utf8")
+        fp.close()
+
+        prices = []
+        for price_str in re.findall('£.*total cost', html_raw):
+            prices.append(float(price_str.replace(" total cost", "").replace("£", "")))
+        data = []
+        for data_str in re.findall('<strong>\d*GB</strong>', html_raw):
+            data.append(float(re.findall("\d+", data_str)[0]))
+        offers = list(zip(prices, data))
+        print(*offers)
+
+        if html_raw != old_raw:
+            better = False
+            for offer in offers:
+                if offer[0] < best_offer[0]:
+                    better = True
+                    best_offer = offer
+            send_email(offers, best_offer, better, prev_offers, password, model)
+
+            print("Prices updated")
+            
+        old_raw = html_raw
+        prev_offers.union(set(offers))
+        print("Website checked...")
+        sleep(randint(5, 10))
+
+
+if __name__ == "__main__":
+    main()
