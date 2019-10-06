@@ -66,35 +66,40 @@ def main():
     url = "https://www.mobiles.co.uk/{}?sort=total_cost_after_cashback_asc&filter_tariff_data%5B%5D=>%3D3000%2C-1".format(model)
 
     while True:
-        fp = urllib.request.urlopen(url)
-        mybytes = fp.read()
+        try:
+            fp = urllib.request.urlopen(url)
+            mybytes = fp.read()
 
-        html_raw = mybytes.decode("utf8")
-        fp.close()
+            html_raw = mybytes.decode("utf8")
+            fp.close()
 
-        prices = []
-        for price_str in re.findall('£.*total cost', html_raw):
-            prices.append(float(price_str.replace(" total cost", "").replace("£", "")))
-        data = []
-        for data_str in re.findall('<strong>\d*GB</strong>', html_raw):
-            data.append(float(re.findall("\d+", data_str)[0]))
-        offers = list(zip(prices, data))
-        print(*offers)
+            prices = []
+            for price_str in re.findall('£.*total cost', html_raw):
+                prices.append(float(price_str.replace(" total cost", "").replace("£", "")))
+            data = []
+            for data_str in re.findall('<strong>\d*GB</strong>', html_raw):
+                data.append(float(re.findall("\d+", data_str)[0]))
+            offers = list(zip(prices, data))
+            print(*offers)
 
-        if html_raw != old_raw and not all(offers[i] in prev_offers for i in range(len(offers))):
-            better = False
-            for offer in offers:
-                if offer[0] < best_offer[0]:
-                    better = True
-                    best_offer = offer
-            send_email(offers, best_offer, better, prev_offers, password, model, url)
+            if html_raw != old_raw and not all(offers[i] in prev_offers for i in range(len(offers))):
+                better = False
+                for offer in offers:
+                    if offer[0] < best_offer[0]:
+                        better = True
+                        best_offer = offer
+                send_email(offers, best_offer, better, prev_offers, password, model, url)
 
-            print("Prices updated")
-            
-        old_raw = html_raw
-        prev_offers = set(offers)
-        print("Website checked...")
-        sleep(randint(30, 60))
+                print("Prices updated")
+                
+            old_raw = html_raw
+            prev_offers = set(offers)
+            print("Website checked...")
+            sleep(randint(60, 120))
+        except urllib.error.URLError:
+            print("No connection...")
+            # Wait 5 mins before trying again
+            sleep(300)
 
 
 if __name__ == "__main__":
